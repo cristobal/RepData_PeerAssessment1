@@ -1,0 +1,72 @@
+---
+title: "Reproducible Research: Peer Assessment 1"
+output:
+  html_document:
+    keep_md: true
+---
+
+
+## 1\. Loading and preprocessing the data
+
+1. Unzip the activity data.
+2. Read the csv data from the returned `filepath`.
+3. Read the date column as a date type an store it into a day field.
+4. Remove the unzipped activity csv file.
+
+```{r}
+filepath <- unzip("activity.zip")
+data <- read.csv(filepath, stringsAsFactors = F)
+data$day <- as.Date(data$date, "%Y-%m-%d")
+unlink(filepath)
+```
+
+## 2\. What is mean total number of steps taken per day?
+
+#### 2\.1 Histogram of total steps taken per day
+
+1. Load the [dplyr](https://cran.r-project.org/web/packages/dplyr/index.html) package.
+2. Group the data by day, and sum the steps by day. Store the result into the variable `steps_by_day`.
+3. Plot a histogram of the total number of steps taken per day.
+
+```{r}
+library(dplyr)
+
+steps_by_day <-
+  group_by(na.omit(data), day) %>%
+  summarise(steps = sum(steps))
+
+hist(steps_by_day$steps,
+  main = "Histogram steps by day",
+  xlab = "distribution (total steps per day)",
+  ylab = "frequency (average total days)",
+  col = "red")
+```
+
+We can see the following from the histogram the following:
+
+- In the first bin we have an average of `5` days where we have an total steps distribution in between `0..5000` steps per day.
+- In the middle bin an average of more than `25` days where the distribution lies in between `10000-15000` steps per day.
+- In the last bin an average of about `2` days where the distribution lies in between `20000-25000` steps per day.
+
+#### 2\.2 Report the mean and median of total number of steps taken per day.
+
+We summarize the mean and median from the previous `steps_by_day` variable,
+and report then.
+
+```{r}
+steps_by_day_summary <- summarise(steps_by_day, mean = mean(steps), median = median(steps))
+cat(sprintf("Mean:   %0.2f\nMedian: %d",
+  steps_by_day_summary$mean,
+  steps_by_day_summary$median))
+```
+
+
+## What is the average daily activity pattern?
+
+
+
+## Imputing missing values
+
+
+
+## Are there differences in activity patterns between weekdays and weekends?
