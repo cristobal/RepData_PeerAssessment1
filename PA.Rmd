@@ -16,7 +16,25 @@ output:
 ```{r}
 filepath <- unzip("activity.zip")
 data <- read.csv(filepath, stringsAsFactors = F)
-data$day <- as.Date(data$date, "%Y-%m-%d")
+data$time <- ""
+for (i in seq_along(1:nrow(data))) {
+  interval <- toString(data$interval[i])
+  len      <- nchar(interval)
+  if (len > 2) {
+    hours   <- as.integer(substr(interval, 0, len - 2))
+    minutes <- as.integer(substr(interval, len - 1, len))
+  }
+  else {
+    hours   <- 0
+    minutes <- as.integer(interval)
+  }
+
+  data$time[i] <- sprintf("%s %02d:%02d:00", data$date[i], hours, minutes)
+}
+data$date <- as.Date(data$date, "%Y-%m-%d")
+data$day  <- format(data$date, "%a")
+data$time <- strptime(data$time, format = "%Y-%m-%d %H:%M:%S")
+data$time <- as.POSIXct(data$time)
 unlink(filepath)
 ```
 
@@ -32,7 +50,7 @@ unlink(filepath)
 library(dplyr)
 
 steps_by_day <-
-  group_by(na.omit(data), day) %>%
+  group_by(na.omit(data), date) %>%
   summarise(steps = sum(steps))
 
 hist(steps_by_day$steps,
@@ -51,10 +69,13 @@ We can see the following from the histogram the following:
 #### 2\.2 Report the mean and median of total number of steps taken per day.
 
 We summarize the mean and median from the previous `steps_by_day` variable,
-and report then.
+and report them.
 
 ```{r}
-steps_by_day_summary <- summarise(steps_by_day, mean = mean(steps), median = median(steps))
+steps_by_day_summary <- summarise(steps_by_day,
+  mean = mean(steps),
+  median = median(steps))
+
 cat(sprintf("Mean:   %0.2f\nMedian: %d",
   steps_by_day_summary$mean,
   steps_by_day_summary$median))
@@ -63,7 +84,33 @@ cat(sprintf("Mean:   %0.2f\nMedian: %d",
 
 ## What is the average daily activity pattern?
 
+1. Group the data by interval, and get mean average the steps by interval. Store the result into the variable `steps_by_interval`.
+2. Plot a time series over the 5-minute interval and the average steps taken every 5-minute across the days.
+3. Sort the `steps_by_interval` by steps in descending order, and display the first row with the max number of steps and its interval.
 
+```{r}
+steps_by_interval <-
+  group_by(na.omit(data), interval) %>%
+  summarise(steps = mean(steps))
+
+with(steps_by_interval,
+  plot(x = interval, y = steps,
+    type = "l",
+    col = "blue",
+    main = "Time series Plot",
+    xlab = "5-minute intervals over time",
+    ylab = "Average steps taken"))
+
+arrange(steps_by_interval, desc(steps)) %>%
+  head(1)
+```
+
+We can see from the plot the following:
+
+- Activity steps starts usually around 5am in the morning and peaks between 8-9am.
+- Then it's steady from 10 am to around 20pm where the activity steps decreases.
+
+The max average steps is at 8:35 in the morning with an average of `206` steps.
 
 ## Imputing missing values
 
